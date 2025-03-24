@@ -17,8 +17,8 @@ def period_im(p):
 def extract_w(u, k1, k2, romega):# renvoie l'image correspondant à la fenêtre de centre (k1,k2)
     M,N = u.shape
     omegax = np.array(range(k1-romega,k1+romega+1))
-    omegax = omegax % M
     omegay = np.array(range(k2-romega,k2+romega+1))
+    omegax = omegax % M
     omegay = omegay % M
     uw = u[np.ix_(omegax, omegay)]
     
