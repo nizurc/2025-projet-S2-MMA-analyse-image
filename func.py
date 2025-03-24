@@ -1,3 +1,6 @@
+import cv2
+import numpy as np
+
 def period_im(p):
     # Créer les symétries
     flip_h = cv2.flip(p, 1)   # Symétrie horizontale
