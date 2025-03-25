@@ -23,3 +23,27 @@ def extract_w(u, k1, k2, romega):# renvoie l'image correspondant à la fenêtre 
     uw = u[np.ix_(omegax, omegay)]
     
     return uw
+
+def guided_f(p,I,romega,epsilon):
+    M,N = p.shape
+    nomega = (1 + 2*romega)**2 # nombre de pixels dans la fenêtre
+    a = np.zeros((M,N))
+    b = np.zeros((M,N))
+    for x in range(M):
+        for y in range(N):
+            Iw = extract_w(I, x, y, romega)
+            pw = extract_w(p, x, y, romega)
+            muk = np.mean(Iw)
+            sigmak2 = np.var(Iw)
+            pbarrek = np.mean(pw)
+            a[x,y] = ((1/nomega) * np.sum(Iw*pw) - muk * pbarrek)/(sigmak2 + epsilon)
+            b[x,y] = pbarrek - a[x,y] * muk
+
+    q = np.zeros((M,N))
+    for x in range(M):
+        for y in range(N):
+            aw = extract_w(a, x, y, 2*romega)
+            bw = extract_w(b, x, y, 2*romega)
+            q[x,y] = (1/nomega) * np.sum(aw * p[x,y] + bw)
+    
+    return q
