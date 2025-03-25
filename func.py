@@ -14,6 +14,12 @@ def period_im(p):
 
     return p4
 
+def deperiod_im(p4):
+    M,N = p4.shape
+    p = p4[:M//2, :M//2]
+    
+    return p
+
 def extract_w(u, k1, k2, romega):# renvoie l'image correspondant à la fenêtre de centre (k1,k2)
     M,N = u.shape
     omegax = np.array(range(k1-romega,k1+romega+1))
@@ -47,3 +53,4 @@ def guided_f(p,I,romega,epsilon):
             q[x,y] = (1/nomega) * np.sum(aw * p[x,y] + bw)
     
     return q
+
