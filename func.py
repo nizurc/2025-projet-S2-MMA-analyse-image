@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-def period_im(p):
+def period_im(p): # FONCTION QUI PERIODISE LES IMAGES
     # Créer les symétries
     flip_h = cv2.flip(p, 1)   # Symétrie horizontale
     flip_v = cv2.flip(p, 0)   # Symétrie verticale
@@ -14,7 +14,7 @@ def period_im(p):
 
     return p4
 
-def deperiod_im(p4):
+def deperiod_im(p4): # FONCTION QUI DEPERIODISE LES IMAGES
     M,N = p4.shape
     p = p4[:M//2, :M//2]
     
@@ -30,7 +30,7 @@ def extract_w(u, k1, k2, romega):# renvoie l'image correspondant à la fenêtre 
     
     return uw
 
-def guided_f(p,I,romega,epsilon):
+def guided_f(p,I,romega,epsilon): # IMPLEMENTATION NAIVE DU FILTRE GUIDÉ
     M,N = p.shape
     nomega = (1 + 2*romega)**2 # nombre de pixels dans la fenêtre
     a = np.zeros((M,N))
@@ -54,3 +54,47 @@ def guided_f(p,I,romega,epsilon):
     
     return q
 
+def compute_intmat(M):# calcule la matrice intégrale
+    M1 = np.cumsum(M, axis=1)
+    M2 = np.cumsum(M1, axis=0)
+
+    return M2
+
+def compute_averagew(A,p1,p2,q1,q2):# calcule des moyennes dans des fenêtres à partir de la matrice intégrale
+    M,N = A.shape
+    i = min(max(p1-1, 0), M - 1)
+    j = min(max(p2-1, 0), N - 1)
+    k = min(max(q1, 0), N - 1)
+    l = min(max(q2, 0), N - 1)
+    sumw = A[k,l] - A[i,l] - A[k,j] + A[i,j]
+    airew = (k-i)*(l-j)
+    
+    return sumw/airew
+
+def guided_f_fast(p,I,romega,epsilon): # IMPLEMENTATION EFFICACE DU FILTRE GUIDÉ (MATRICE INTÉGRALE)
+    M,N = p.shape
+    a = np.zeros((M,N))
+    b = np.zeros((M,N))
+    iInt = compute_intmat(I)
+    i2Int = compute_intmat((I-np.mean(I))**2)
+    pInt = compute_intmat(p)
+    piInt = compute_intmat(p*I)
+    for x in range(M):
+        for y in range(N):
+            muk = compute_averagew(iInt,x-romega,y-romega,x+romega,y+romega)
+            sigmak2 = compute_averagew(i2Int,x-romega,y-romega,x+romega,y+romega)
+            pbarrek = compute_averagew(pInt,x-romega,y-romega,x+romega,y+romega)
+            piw = compute_averagew(piInt,x-romega,y-romega,x+romega,y+romega)
+            a[x,y] = (piw - muk * pbarrek)/(sigmak2 + epsilon)
+            b[x,y] = pbarrek - a[x,y] * muk
+
+    q = np.zeros((M,N))
+    aInt = compute_intmat(a)
+    bInt = compute_intmat(b)
+    for x in range(M):
+        for y in range(N):
+            aw = compute_averagew(aInt,x-2*romega,y-2*romega,x+2*romega,y+2*romega)
+            bw = compute_averagew(bInt,x-2*romega,y-2*romega,x+2*romega,y+2*romega)
+            q[x,y] = p[x,y] * aw + bw 
+    
+    return q
