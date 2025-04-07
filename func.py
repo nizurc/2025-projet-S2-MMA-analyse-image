@@ -98,3 +98,18 @@ def guided_f_fast(p,I,romega,epsilon): # IMPLEMENTATION EFFICACE DU FILTRE GUIDÃ
             q[x,y] = p[x,y] * aw + bw 
     
     return q
+
+def average_filter(u,r):
+    # uniform filter with a square (2*r+1)x(2*r+1) window 
+    # u is a 2d image
+    # r is the radius for the filter
+   
+    (nrow, ncol) = u.shape
+    big_uint = np.zeros((nrow+2*r+1,ncol+2*r+1))
+    big_uint[r+1:nrow+r+1,r+1:ncol+r+1] = u
+    big_uint = np.cumsum(np.cumsum(big_uint,0),1)  # integral image
+        
+    out = big_uint[2*r+1:nrow+2*r+1,2*r+1:ncol+2*r+1] + big_uint[0:nrow,0:ncol] - big_uint[0:nrow,2*r+1:ncol+2*r+1] - big_uint[2*r+1:nrow+2*r+1,0:ncol]
+    out = out/(2*r+1)**2
+    
+    return out
