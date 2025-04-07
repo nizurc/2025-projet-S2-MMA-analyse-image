@@ -71,6 +71,45 @@ def compute_averagew(A,p1,p2,q1,q2):# calcule des moyennes dans des fenêtres à
     
     return sumw/airew
 
+def average_filter(u,r):
+    # uniform filter with a square (2*r+1)x(2*r+1) window 
+    # u is a 2d image
+    # r is the radius for the filter
+   
+    (nrow, ncol) = u.shape
+    big_uint = np.zeros((nrow+2*r+1,ncol+2*r+1))
+    big_uint[r+1:nrow+r+1,r+1:ncol+r+1] = u
+    big_uint = np.cumsum(np.cumsum(big_uint,0),1)  # integral image
+        
+    out = big_uint[2*r+1:nrow+2*r+1,2*r+1:ncol+2*r+1] + big_uint[0:nrow,0:ncol] - big_uint[0:nrow,2*r+1:ncol+2*r+1] - big_uint[2*r+1:nrow+2*r+1,0:ncol]
+    out = out/(2*r+1)**2
+    
+    return out
+
+def average_filter2(u, r):
+    """
+    Applique un filtre moyen sur une image 2D u avec une fenêtre carrée (2r+1)x(2r+1),
+    en utilisant une image intégrale pour une implémentation rapide.
+    Les bords sont symétrisés (padding miroir).
+    """
+    
+    # Padding symétrique (miroir)
+    padded = np.pad(u, ((r+1, r), (r+1, r)), mode='symmetric')
+    
+    # Calcul de l'image intégrale (somme cumulée 2D)
+    integral = np.cumsum(np.cumsum(padded, axis=0), axis=1)
+    
+    # Zone centrale : du coin supérieur gauche au coin inférieur droit
+    A = integral[2*r+1:,2*r+1:]
+    B = integral[:-2*r-1,2*r+1:]
+    C = integral[2*r+1:,:-2*r-1]
+    D = integral[:-2*r-1,:-2*r-1]
+    
+    total = A - B - C + D
+    out = total / ((2*r + 1) ** 2)
+    
+    return out
+
 def guided_f_fast(p,I,romega,epsilon): # IMPLEMENTATION EFFICACE DU FILTRE GUIDÉ (MATRICE INTÉGRALE)
     M,N = p.shape
     a = np.zeros((M,N))
@@ -93,41 +132,27 @@ def guided_f_fast(p,I,romega,epsilon): # IMPLEMENTATION EFFICACE DU FILTRE GUID�
     bInt = compute_intmat(b)
     for x in range(M):
         for y in range(N):
-            aw = compute_averagew(aInt,x-2*romega,y-2*romega,x+2*romega,y+2*romega)
-            bw = compute_averagew(bInt,x-2*romega,y-2*romega,x+2*romega,y+2*romega)
-            q[x,y] = p[x,y] * aw + bw 
+            aw = compute_averagew(aInt,x-romega,y-romega,x+romega,y+romega)
+            bw = compute_averagew(bInt,x-romega,y-romega,x+romega,y+romega)
+            q[x,y] = I[x,y] * aw + bw 
     
     return q
-
-def average_filter(u,r):
-    # uniform filter with a square (2*r+1)x(2*r+1) window 
-    # u is a 2d image
-    # r is the radius for the filter
-   
-    (nrow, ncol) = u.shape
-    big_uint = np.zeros((nrow+2*r+1,ncol+2*r+1))
-    big_uint[r+1:nrow+r+1,r+1:ncol+r+1] = u
-    big_uint = np.cumsum(np.cumsum(big_uint,0),1)  # integral image
-        
-    out = big_uint[2*r+1:nrow+2*r+1,2*r+1:ncol+2*r+1] + big_uint[0:nrow,0:ncol] - big_uint[0:nrow,2*r+1:ncol+2*r+1] - big_uint[2*r+1:nrow+2*r+1,0:ncol]
-    out = out/(2*r+1)**2
-    
-    return out
 
 def guided_f_fast2(p,I,romega,epsilon): # IMPLEMENTATION EFFICACE DU FILTRE GUIDÉ (MATRICE INTÉGRALE)
     M,N = p.shape
     a = np.zeros((M,N))
     b = np.zeros((M,N))
 
-    p_av = f.average_filter(p,romega)
-    I_av = f.average_filter(I,romega)
-    Ip_av = f.average_filter(I*p,romega)
-    sig2_av = f.average_filter((I-I_av)**2,romega)
+    p_av = average_filter2(p,romega)
+    I_av = average_filter2(I,romega)
+    Ip_av = average_filter2(I*p,romega)
+    sig2_av = average_filter2((I-I_av)**2,romega)
     a = (Ip_av - p_av*I_av)/(sig2_av + epsilon)
     b = p_av - a * I_av
-    a_av = f.average_filter(a,romega)
-    b_av = f.average_filter(b,romega)
+    a_av = average_filter2(a,romega)
+    b_av = average_filter2(b,romega)
 
     q = I * a_av + b_av
 
     return q
+
