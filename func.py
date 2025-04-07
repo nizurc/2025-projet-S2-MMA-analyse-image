@@ -48,8 +48,8 @@ def guided_f(p,I,romega,epsilon): # IMPLEMENTATION NAIVE DU FILTRE GUIDÉ
     q = np.zeros((M,N))
     for x in range(M):
         for y in range(N):
-            aw = extract_w(a, x, y, 2*romega)
-            bw = extract_w(b, x, y, 2*romega)
+            aw = extract_w(a, x, y, romega)
+            bw = extract_w(b, x, y, romega)
             q[x,y] = (1/nomega) * np.sum(aw * p[x,y] + bw)
     
     return q
@@ -113,3 +113,21 @@ def average_filter(u,r):
     out = out/(2*r+1)**2
     
     return out
+
+def guided_f_fast2(p,I,romega,epsilon): # IMPLEMENTATION EFFICACE DU FILTRE GUIDÉ (MATRICE INTÉGRALE)
+    M,N = p.shape
+    a = np.zeros((M,N))
+    b = np.zeros((M,N))
+
+    p_av = f.average_filter(p,romega)
+    I_av = f.average_filter(I,romega)
+    Ip_av = f.average_filter(I*p,romega)
+    sig2_av = f.average_filter((I-I_av)**2,romega)
+    a = (Ip_av - p_av*I_av)/(sig2_av + epsilon)
+    b = p_av - a * I_av
+    a_av = f.average_filter(a,romega)
+    b_av = f.average_filter(b,romega)
+
+    q = I * a_av + b_av
+
+    return q
