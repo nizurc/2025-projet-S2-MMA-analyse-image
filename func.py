@@ -139,7 +139,7 @@ def compare_parameters_fg(p1,ranger,rangeeps,xmin,xmax,prof):
         for epsilon in rangeeps**2:
             img = guided_f_fast3(p1, p1, r, epsilon)
             ax = axes1[i]
-            ax.imshow(img, cmap='gray')
+            ax.imshow(img, cmap='gray',vmin=0, vmax=1)
             ax.set_title(f"r={r}, ε={epsilon:.3f}")
             ax.axis('off')
             if prof ==1:
@@ -172,7 +172,7 @@ def compare_parameters_fg_zoom(p1,ranger,rangeeps,xmin,xmax,ymin,ymax):
         for epsilon in rangeeps**2:
             img = guided_f_fast3(p1, p1, r, epsilon)
             ax = axes1[i]
-            ax.imshow(img, cmap='gray')
+            ax.imshow(img, cmap='gray',vmin=0, vmax=1)
             ax.set_title(f"r={r}, ε={epsilon:.3f}")
             ax.axis('off')
             ax.set_xlim(xmin, xmax)
